@@ -38,7 +38,7 @@ unsigned int indices[] = {
 
 /* END OF TEMPORARY TEST CODE */
 
-Application::Application() : m_width(1080), m_height(720)
+Application::Application() : m_width(1920), m_height(1080)
 {
 
 }
@@ -134,13 +134,29 @@ void Application::handleEvents()
 	}
 
 	glm::vec2 mousepos = Input::getInstance().getMouseCoords();
-	// Force mouse to the center of the screen
-	SDL_SetWindowGrab(m_window, SDL_TRUE);
-	SDL_WarpMouseInWindow(m_window, m_width/2, m_height/2);
 
 	// Handle Camera Movement
-	if (mousepos.x != 0 && mousepos.y != 0) {
+	if (m_mouselock)
+	{
+		// Force the mouse into the center of the screen
+		SDL_WarpMouseInWindow(m_window, m_width/2, m_height/2);
+		// Move the camera
 		m_camera->processMouseMovement(-(m_width/2 - mousepos.x), m_height/2 - mousepos.y, GL_TRUE);
+		// Handle camera zoom
+		m_camera->processMouseScroll((float) Input::getInstance().getMouseWheelVertical() / 10.0f);
+	}
+
+	// Toggle mouse lock
+	if(Input::getInstance().isKeyPressed(SDLK_ESCAPE))
+	{
+		m_mouselock = !m_mouselock;
+		SDL_SetWindowGrab(m_window, m_mouselock ? SDL_TRUE : SDL_FALSE);
+		SDL_ShowCursor(m_mouselock ? SDL_DISABLE : SDL_ENABLE);
+		if (m_mouselock)
+		{
+			// Prevent the camera from jumping
+			SDL_WarpMouseInWindow(m_window, m_width/2, m_height/2);
+		}
 	}
 
 	// Handle Camera Movement Keys
@@ -156,9 +172,6 @@ void Application::handleEvents()
 	if(Input::getInstance().isKeyDown(SDLK_a))
 		m_camera->processKeyboard(Camera_Movement::LEFT, 0.01f);
 
-	// Handle Camera Zoom
-	m_camera->processMouseScroll((float) Input::getInstance().getMouseWheelVertical() / 10.0f);
-
 	// Print mouse position on click
 	if(Input::getInstance().isKeyPressed(SDL_BUTTON_LEFT))
 		std::cout << "mX: " << mousepos.x << " mY: " << mousepos.y << std::endl;
@@ -166,10 +179,6 @@ void Application::handleEvents()
 	// Toggle wireframe
 	if(Input::getInstance().isKeyPressed(SDLK_x))
 		m_wireframe = !m_wireframe;
-
-	// Exit game on Esc
-	if(Input::getInstance().isKeyPressed(SDLK_ESCAPE))
-		exit();
 }
 
 
@@ -201,6 +210,11 @@ void Application::run()
 	testShader.setAttribute("position", 3, GL_FALSE, 3, 0, GL_FLOAT);
 	/* END OF TEMPORARY TEST CODE */
 
+	// Grab the mouse, disable cursor and place it in the center
+	SDL_SetWindowGrab(m_window, SDL_TRUE);
+	SDL_ShowCursor(SDL_DISABLE);
+	SDL_WarpMouseInWindow(m_window, m_width/2, m_height/2);
+
 	while(m_run)
 	{
 		m_last = m_now;
@@ -219,8 +233,9 @@ void Application::run()
 		if (m_wireframe)
 			glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
 
-		glEnable(GL_DEPTH_TEST | GL_CULL_FACE);
-    glCullFace(GL_BACK);
+		glEnable(GL_DEPTH_TEST);
+		glEnable(GL_CULL_FACE);
+		glCullFace(GL_BACK);
 
 		/* TEMPORARY TEST CODE */
 		testShader.setBuffers(m_vao, m_vbo, m_ebo);

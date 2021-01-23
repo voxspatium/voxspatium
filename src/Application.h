@@ -50,6 +50,7 @@ class Application : public Singleton<Application>
 
 		bool m_run;
 		bool m_wireframe;
+		bool m_mouselock = true;
 
 		void handleEvents();
 		void run();
