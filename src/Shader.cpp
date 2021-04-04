@@ -301,11 +301,15 @@ void Shader::use()
 	// Bind the shader
 	start();
 
-	// Bind the buffers needed
-	glBindVertexArray(vao);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+	// Bind the buffers
+	bindBuffers();
 
+	// Bind attributes
+	bindAttributes();
+}
+
+void Shader::bindAttributes()
+{
 	// Enable all attributes
 	for (auto it(m_attributes.begin()); it != m_attributes.end(); ++it)
 	{
@@ -320,6 +324,13 @@ void Shader::use()
 			(void*)(it->second.offset * sizeof(GLfloat))
 		);
 	}
+}
+
+void Shader::bindBuffers()
+{
+	glBindVertexArray(vao);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
 }
 
 void Shader::setBuffers(GLint vao, GLint vbo, GLint ebo)

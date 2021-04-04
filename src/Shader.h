@@ -56,6 +56,8 @@ public:
 
 	// Bind Attributes and start the shader program
 	void use();
+	void bindBuffers();
+	void bindAttributes();
 
 	// Start the shader program without binding attributes
 	void start();

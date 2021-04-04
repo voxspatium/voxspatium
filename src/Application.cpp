@@ -22,21 +22,8 @@
 #include "Application.h"
 #include "util/Log.h"
 #include "Shader.h"
-
-/* TEMPORARY TEST CODE */
-
-float vertices[] = {
-	10.0f, 0.0f,  10.0f,  // top right
-	10.0f, 0.0f, -10.0f,  // bottom right
-	-10.0f, 0.0f, -10.0f, // bottom left
-	-10.0f, 0.0f,  10.0f   // top left
-};
-
-unsigned int indices[] = {
-	0, 1, 3, 1, 2, 3
-};
-
-/* END OF TEMPORARY TEST CODE */
+#include "voxel/VoxelWorld.h"
+#include "util/SimplexNoise.h"
 
 Application::Application() : m_width(1920), m_height(1080)
 {
@@ -181,7 +168,6 @@ void Application::handleEvents()
 		m_wireframe = !m_wireframe;
 }
 
-
 void Application::run()
 {
 	m_run = true;
@@ -190,24 +176,13 @@ void Application::run()
 	m_last = 0;
 
 	/* TEMPORARY TEST CODE */
-	GLuint m_vao, m_vbo, m_ebo;
+	Shader& voxelShader = Shader::createShader("data/shaders/voxel.vert", "data/shaders/voxel.frag");
+	voxelShader.linkShaders();
+	voxelShader.setAttribute("position", 3, GL_FALSE, 6, 0, GL_FLOAT);
+	voxelShader.setAttribute("normal", 3, GL_TRUE, 6, 3, GL_FLOAT);
 
-	glGenVertexArrays(1, &m_vao);
-	glBindVertexArray(m_vao);
-
-	glGenBuffers(1, &m_vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-	glGenBuffers(1, &m_ebo);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-	Shader& testShader = Shader::createShader("data/shaders/test.vert", "data/shaders/test.frag");
-	testShader.linkShaders();
-
-	// Set attribute arrays
-	testShader.setAttribute("position", 3, GL_FALSE, 3, 0, GL_FLOAT);
+	SimplexNoise noise = SimplexNoise(0.5f, 15.0f, 2.0f, 0.4f);
+	VoxelWorld world = VoxelWorld(&noise, glm::vec3(.0f, .0f, .0f));
 	/* END OF TEMPORARY TEST CODE */
 
 	// Grab the mouse, disable cursor and place it in the center
@@ -238,14 +213,8 @@ void Application::run()
 		glCullFace(GL_BACK);
 
 		/* TEMPORARY TEST CODE */
-		testShader.setBuffers(m_vao, m_vbo, m_ebo);
-		testShader.use();
-
-		m_camera->shaderViewProjection(testShader);
-
-		testShader.setUniform("modelMatrix", glm::mat4(1.0f));
-
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		world.update(m_camera);
+		world.render(&voxelShader, m_camera);
 		/* END OF TEMPORARY TEST CODE */
 
 		// Disable wireframe rendering
