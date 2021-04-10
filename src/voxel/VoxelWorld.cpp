@@ -75,7 +75,7 @@ void VoxelWorld::update(Camera* camera)
       if (distance < 128.0f)
       {
         if (!chunk->isMeshed() || chunk->isDirty()) {
-          if (m_chunksToGenerate.size() < 5)
+          if (m_chunksToLoad.size() < 5)
           {
             m_chunksToLoad.push_back(chunk);
           }

@@ -52,7 +52,11 @@ void VoxelChunk::generate()
       for (uint y = 0; y < m_size; y++)
       {
         unsigned int absHeight = (m_index.y * m_size) + y;
-        m_data[x][y][z] = absHeight < (unsigned int)columnHeight ? 1 : 0;
+        unsigned int block = absHeight < (unsigned int)columnHeight ? 1 : 0;
+        if (block == 1 && absHeight < (unsigned int)columnHeight - 4) {
+          block = 2;
+        }
+        m_data[x][y][z] = block;
       }
     }
   }

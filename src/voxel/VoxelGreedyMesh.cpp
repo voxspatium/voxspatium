@@ -1,5 +1,6 @@
 #include "VoxelGreedyMesh.h"
 #include "VoxelChunk.h"
+#include <algorithm>
 
 VoxelGreedyMesh::VoxelGreedyMesh(VoxelChunk* chunk)
 {
@@ -33,7 +34,7 @@ VoxelGreedyMesh::VoxelGreedyMesh(VoxelChunk* chunk)
           for (x[u] = 0; x[u] < (int)size; ++x[u]) {
             uint current = chunk->getVoxelIDAt(x[0], x[1], x[2]);
             uint adjacent = chunk->getVoxelIDAt(x[0] + q[0], x[1] + q[1], x[2] + q[2]);
-            mask[n++] = (current == adjacent) ? -1 : (backFace ? adjacent : current);
+            mask[n++] = ((!!current) == (!!adjacent)) ? 0 : ((!!current) ? current : -adjacent);
           }
         }
 
@@ -44,15 +45,16 @@ VoxelGreedyMesh::VoxelGreedyMesh(VoxelChunk* chunk)
         n = 0;
         for (j = 0; j < (int)size; ++j) {
           for (i = 0; i < (int)size;) {
-            if (mask[n] > 0) {
+            int c = mask[n];
+            if (!!c) {
               // Compute width
-              for (w = 1; mask[n + w] > 0 && mask[n + w] == mask[n] && i + w < (int)size; ++w) {}
+              for (w = 1; mask[n + w] == c && i + w < (int)size; ++w) {}
 
               // Compute height
               bool done = false;
               for (h = 1; j + h < (int)size; ++h) {
                 for (k = 0; k < w; ++k) {
-                  if (mask[n + k + h * (int)size] < 1 || mask[n + k + h * (int)size] != mask[n]) {
+                  if (mask[n + k + h * (int)size] != c) {
                     done = true;
                     break;
                   }
@@ -65,10 +67,14 @@ VoxelGreedyMesh::VoxelGreedyMesh(VoxelChunk* chunk)
               x[v] = j;
 
               int du[3] = {0, 0, 0};
-              du[u] = w;
-
               int dv[3] = {0, 0, 0};
+
+              du[u] = w;
               dv[v] = h;
+
+              if (c < 0) {
+                c = -c;
+              }
 
               quad.clear();
               quad.push_back({x[0], x[1], x[2]});
@@ -77,11 +83,11 @@ VoxelGreedyMesh::VoxelGreedyMesh(VoxelChunk* chunk)
               quad.push_back({x[0] + dv[0], x[1] + dv[1], x[2] + dv[2]});
 
               // Add vertices and normals
-              int mul = backFace ? -1 : 1;
               for (int qindex = 0; qindex < 4; ++qindex) {
                 vertices.push_back({
                   quad[qindex],
-                  {q[0] * mul, q[1] * mul, q[2] * mul}
+                  {0.0f, 0.0f, 0.0f},
+                  (float)c
                 });
               }
 
@@ -124,6 +130,20 @@ VoxelGreedyMesh::VoxelGreedyMesh(VoxelChunk* chunk)
   }
 
   m_indices = indices.size();
+
+  // Generate face normals
+  // TODO: move this somewhere so that it could be reused
+  for (unsigned int i = 0; i < m_indices; i += 3) {
+    glm::vec3 vA = vertices[indices[i]].position;
+    glm::vec3 vB = vertices[indices[i + 1]].position;
+    glm::vec3 vC = vertices[indices[i + 2]].position;
+
+    glm::vec3 res = glm::cross(vC - vB, vA - vB);
+
+    vertices[indices[i]].normal = glm::normalize(res);
+    vertices[indices[i + 1]].normal = glm::normalize(res);
+    vertices[indices[i + 2]].normal = glm::normalize(res);
+  }
 
   glGenVertexArrays(1, &m_vao);
 	glBindVertexArray(m_vao);

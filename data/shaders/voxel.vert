@@ -2,7 +2,9 @@
 
 in vec3 position;
 in vec3 normal;
-out vec2 test;
+in float index;
+
+out vec3 uv;
 
 uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
@@ -10,5 +12,5 @@ uniform mat4 modelMatrix;
 
 void main(void) {
 	gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0);
-	test = vec2(normal.x, normal.z);
+	uv = vec3(dot(normal.zxy, position), dot(normal.yzx, position), index - 1.0f);
 }

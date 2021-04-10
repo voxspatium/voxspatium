@@ -24,6 +24,7 @@
 #include "Shader.h"
 #include "voxel/VoxelWorld.h"
 #include "util/SimplexNoise.h"
+#include "texture/Texture.h"
 
 Application::Application() : m_width(1920), m_height(1080)
 {
@@ -178,11 +179,13 @@ void Application::run()
 	/* TEMPORARY TEST CODE */
 	Shader& voxelShader = Shader::createShader("data/shaders/voxel.vert", "data/shaders/voxel.frag");
 	voxelShader.linkShaders();
-	voxelShader.setAttribute("position", 3, GL_FALSE, 6, 0, GL_FLOAT);
-	voxelShader.setAttribute("normal", 3, GL_TRUE, 6, 3, GL_FLOAT);
+	voxelShader.setAttribute("position", 3, GL_FALSE, 7, 0, GL_FLOAT);
+	voxelShader.setAttribute("normal", 3, GL_TRUE, 7, 3, GL_FLOAT);
+	voxelShader.setAttribute("index", 1, GL_FALSE, 7, 6, GL_FLOAT);
 
+	Texture* test = Texture::create2DArrayTexture({"data/textures/test1.png", "data/textures/test2.png"}, 16, 16);
 	SimplexNoise noise = SimplexNoise(0.5f, 15.0f, 2.0f, 0.4f);
-	VoxelWorld world = VoxelWorld(&noise, glm::vec3(.0f, .0f, .0f));
+	VoxelWorld world = VoxelWorld(&noise, glm::vec3(.0f, .0f, .0f), 4);
 	/* END OF TEMPORARY TEST CODE */
 
 	// Grab the mouse, disable cursor and place it in the center
@@ -213,6 +216,7 @@ void Application::run()
 		glCullFace(GL_BACK);
 
 		/* TEMPORARY TEST CODE */
+		test->bind(0);
 		world.update(m_camera);
 		world.render(&voxelShader, m_camera);
 		/* END OF TEMPORARY TEST CODE */
